@@ -31,9 +31,11 @@
 #include "boost/program_options.hpp"
 #include "boost/filesystem.hpp"
 
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 using namespace eos;
 namespace po = boost::program_options;
@@ -112,6 +114,56 @@ LandmarkCollection<cv::Vec2f> read_pts_landmarks(std::string filename)
  * @param[in] viewport Viewport to draw the mesh.
  * @param[in] colour Colour of the mesh to be drawn.
  */
+void draw_points(cv::Mat image, const core::Mesh& mesh, glm::mat4x4 modelview, glm::mat4x4 projection, glm::vec4 viewport, vector<int> sfmIndices, cv::Scalar colour = cv::Scalar(0, 255, 0, 255))
+{
+  //vector<cv::Point> points;
+
+  int i = 0;
+	for (const auto& triangle : mesh.tvi)
+	{
+    ++i;
+		const auto p1 = glm::project({ mesh.vertices[triangle[0]][0], mesh.vertices[triangle[0]][1], mesh.vertices[triangle[0]][2] }, modelview, projection, viewport);
+		//const auto p2 = glm::project({ mesh.vertices[triangle[1]][0], mesh.vertices[triangle[1]][1], mesh.vertices[triangle[1]][2] }, modelview, projection, viewport);
+		//const auto p3 = glm::project({ mesh.vertices[triangle[2]][0], mesh.vertices[triangle[2]][1], mesh.vertices[triangle[2]][2] }, modelview, projection, viewport);
+		//if (render::detail::are_vertices_ccw_in_screen_space(glm::vec2(p1), glm::vec2(p2), glm::vec2(p3)))
+    /*
+    points.push_back(cv::Point(p1.x, p1.y));
+    points.push_back(cv::Point(p2.x, p2.y));
+    points.push_back(cv::Point(p3.x, p3.y));
+    cv::line(image, cv::Point(p1.x, p1.y), cv::Point(p2.x, p2.y), colour);
+    cv::line(image, cv::Point(p2.x, p2.y), cv::Point(p3.x, p3.y), colour);
+    cv::line(image, cv::Point(p3.x, p3.y), cv::Point(p1.x, p1.y), colour);
+    */
+    //if (i >= 3780 && i <= 4040) {
+    //if (p1.x >= 412 && p1.y < 117) {
+    if (std::find(sfmIndices.begin(), sfmIndices.end(), i) != sfmIndices.end()) {
+      cout << "point " << p1.x << " " << p1.y << " index: " << i << '\n';
+      cv::putText(image, std::to_string(i), cv::Point(p1.x, p1.y), cv::FONT_HERSHEY_PLAIN, 0.75, { 255, 0, 0 });
+      cv::rectangle(image, cv::Point2f(p1.x , p1.y), cv::Point2f(p1.x, p1.y), { 0, 0, 255 });
+    //cv::rectangle(image, cv::Point2f(p2.x , p2.y), cv::Point2f(p2.x, p2.y), { 0, 255, 0 });
+    //cv::rectangle(image, cv::Point2f(p3.x , p3.y), cv::Point2f(p3.x, p3.y), { 0, 0, 255 });
+    }
+	}
+
+  /*
+  vector<cv::Point> out;
+  for (vector<cv::Point>::iterator it = out.begin(); it != out.end(); ++it)
+    cv::rectangle(image, cv::Point2f((*it).x - 2.0f, (*it).y - 2.0f), cv::Point2f((*it).x + 2.0f, (*it).y + 2.0f), { 0, 255, 0 });
+  */
+};
+
+/**
+ * Draws the given mesh as wireframe into the image.
+ *
+ * It does backface culling, i.e. draws only vertices in CCW order.
+ *
+ * @param[in] image An image to draw into.
+ * @param[in] mesh The mesh to draw.
+ * @param[in] modelview Model-view matrix to draw the mesh.
+ * @param[in] projection Projection matrix to draw the mesh.
+ * @param[in] viewport Viewport to draw the mesh.
+ * @param[in] colour Colour of the mesh to be drawn.
+ */
 void draw_wireframe(cv::Mat image, const core::Mesh& mesh, glm::mat4x4 modelview, glm::mat4x4 projection, glm::vec4 viewport, cv::Scalar colour = cv::Scalar(0, 255, 0, 255))
 {
 	for (const auto& triangle : mesh.tvi)
@@ -139,17 +191,19 @@ void draw_wireframe(cv::Mat image, const core::Mesh& mesh, glm::mat4x4 modelview
  */
 int main(int argc, char *argv[])
 {
-	fs::path modelfile, isomapfile, imagefile, landmarksfile, mappingsfile, contourfile, edgetopologyfile, blendshapesfile, outputfile;
+	fs::path modelfile, isomapfile, imagefile, landmarksfile, mappingsfile, contourfile, edgetopologyfile, blendshapesfile, outputfile, indexfile;
 	try {
 		po::options_description desc("Allowed options");
 		desc.add_options()
 			("help,h",
 				"display the help message")
+			("indices,s", po::value<fs::path>(&indexfile)->required()->default_value("../share/sfm_indices"),
+				"set of SFM indices")
 			("model,m", po::value<fs::path>(&modelfile)->required()->default_value("../share/sfm_shape_3448.bin"),
 				"a Morphable Model stored as cereal BinaryArchive")
-			("image,i", po::value<fs::path>(&imagefile)->required()->default_value("data/image_0010.png"),
+			("image,i", po::value<fs::path>(&imagefile)->required()->default_value("data/image_026_1.jpg"),
 				"an input image")
-			("landmarks,l", po::value<fs::path>(&landmarksfile)->required()->default_value("data/image_0010.pts"),
+			("landmarks,l", po::value<fs::path>(&landmarksfile)->required()->default_value("data/image_026_1.pts"),
 				"2D landmarks for the image, in ibug .pts format")
 			("mapping,p", po::value<fs::path>(&mappingsfile)->required()->default_value("../share/ibug_to_sfm.txt"),
 				"landmark identifier to model vertex number mapping")
@@ -176,6 +230,20 @@ int main(int argc, char *argv[])
 		cout << "Use --help to display a list of options." << endl;
 		return EXIT_FAILURE;
 	}
+
+  // load good SFM indices file
+  std::ifstream infile(indexfile.string());
+	if (!infile.is_open()) {
+		throw std::runtime_error(string("Could not open SFM indices file: " + indexfile.string()));
+	}
+  vector<int> sfmIndices;
+  int sfmIndex;
+  cout << "Using SFM indices: []"
+  while(infile >> sfmIndex) {
+    cout << sfmIndex << ' ';
+    sfmIndices.push_back(sfmIndex);
+  }
+  cout << '\n';
 
 	// Load the image, landmarks, LandmarkMapper and the Morphable Model:
 	Mat image = cv::imread(imagefile.string());
@@ -228,7 +296,8 @@ int main(int argc, char *argv[])
 	Mat isomap = render::extract_texture(mesh, affine_from_ortho, image);
 
 	// Draw the fitted mesh as wireframe, and save the image:
-	draw_wireframe(outimg, mesh, rendering_params.get_modelview(), rendering_params.get_projection(), fitting::get_opencv_viewport(image.cols, image.rows));
+	//draw_wireframe(outimg, mesh, rendering_params.get_modelview(), rendering_params.get_projection(), fitting::get_opencv_viewport(image.cols, image.rows));
+	draw_points(outimg, mesh, rendering_params.get_modelview(), rendering_params.get_projection(), fitting::get_opencv_viewport(image.cols, image.rows), sfmIndices);
 	outputfile += fs::path(".png");
 	cv::imwrite(outputfile.string(), outimg);
 
