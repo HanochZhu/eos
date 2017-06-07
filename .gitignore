@@ -1,3 +1,10 @@
 # Ignore (optional) configuration files with user-specific paths:
 initial_cache.cmake
 setup.cfg
+build
+Makefile
+install
+CMakeFiles
+cmake_install.cmake
+examples/*.png
+examples/out*
