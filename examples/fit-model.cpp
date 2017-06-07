@@ -140,7 +140,6 @@ void draw_points(cv::Mat image, const core::Mesh& mesh, glm::mat4x4 modelview, g
   int i = 0;
 	for (const auto& triangle : mesh.tvi)
 	{
-    ++i;
 		const auto p1 = glm::project({ mesh.vertices[triangle[0]][0], mesh.vertices[triangle[0]][1], mesh.vertices[triangle[0]][2] }, modelview, projection, viewport);
 		//const auto p2 = glm::project({ mesh.vertices[triangle[1]][0], mesh.vertices[triangle[1]][1], mesh.vertices[triangle[1]][2] }, modelview, projection, viewport);
 		//const auto p3 = glm::project({ mesh.vertices[triangle[2]][0], mesh.vertices[triangle[2]][1], mesh.vertices[triangle[2]][2] }, modelview, projection, viewport);
@@ -162,6 +161,8 @@ void draw_points(cv::Mat image, const core::Mesh& mesh, glm::mat4x4 modelview, g
     //cv::rectangle(image, cv::Point2f(p2.x , p2.y), cv::Point2f(p2.x, p2.y), { 0, 255, 0 });
     //cv::rectangle(image, cv::Point2f(p3.x , p3.y), cv::Point2f(p3.x, p3.y), { 0, 0, 255 });
     }
+
+    ++i;
 	}
 
   /*
