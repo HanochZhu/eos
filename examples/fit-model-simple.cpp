@@ -31,6 +31,11 @@
 #include "boost/program_options.hpp"
 #include "boost/filesystem.hpp"
 
+//#include "glm/vec2.hpp"
+#include "glm/glm.hpp"
+#include "glm/ext.hpp" // to print glm vectors
+
+
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -199,11 +204,59 @@ int main(int argc, char *argv[])
 	Mat affine_from_ortho = fitting::get_3x4_affine_camera_matrix(rendering_params, image.cols, image.rows);
 	vector<float> fitted_coeffs = fitting::fit_shape_to_landmarks_linear(morphable_model, affine_from_ortho, image_points, vertex_indices);
 
+
+
 	// Obtain the full mesh with the estimated coefficients:
 	core::Mesh mesh = morphable_model.draw_sample(fitted_coeffs, vector<float>());
 
 	// Extract the texture from the image using given mesh and camera parameters:
 	Mat isomap = render::extract_texture(mesh, affine_from_ortho, image);
+
+
+
+	//vector<Vec4f> model_points; // the points in the 3D shape model
+  cout << "3d shape model points" << '\n';
+  cout << "number of elements" << model_points.size() << '\n';
+  for (vector<Vec4f>::iterator it = model_points.begin(); it != model_points.end(); ++it)
+    cout << ' ' << *it;
+  cout << '\n';
+
+  cout << "vertices" << '\n';
+  for (vector<int>::iterator it = vertex_indices.begin(); it != vertex_indices.end(); ++it)
+    cout << ' ' << *it;
+  cout << '\n';
+
+  cout << "image points" << '\n';
+  cout << "number of elements" << image_points.size() << '\n';
+  for (vector<Vec2f>::iterator it = image_points.begin(); it != image_points.end(); ++it)
+    cout << ' ' << *it;
+  cout << '\n';
+
+  cout << "2d landmarks " << '\n';
+  int ci = 0;
+  for(auto&& lm : landmarks) {
+    cout << ' ' << lm.coordinates;
+    ++ci;
+  }
+  cout << '\n';
+  cout << "number of elements" << ci << '\n';
+
+  /*
+  cout << "mesh" << '\n';
+  vector<glm::vec2> texcoords = mesh.texcoords;
+  cout << texcoords[0].x << '\n';
+  */
+
+	// Draw the landmarks:
+  /*
+	Mat outimg2 = outimg.clone();
+  for (vector<Vec2f>::iterator it = image_points.begin(); it != image_points.end(); ++it) {
+    float x = (*it)[0];
+    float y = (*it)[1];
+
+		cv::rectangle(outimg2, cv::Point2f(x - 2.0f, y - 2.0f), cv::Point2f(x + 2.0f, y + 2.0f), { 0, 0, 255 });
+  }
+  */
 
 	// Save the mesh as textured obj:
 	outputfile += fs::path(".obj");
@@ -212,6 +265,10 @@ int main(int argc, char *argv[])
 	// And save the isomap:
 	outputfile.replace_extension(".isomap.png");
 	cv::imwrite(outputfile.string(), isomap);
+
+	// And save the new IMAGE:
+	outputfile.replace_extension(".niko.png");
+	cv::imwrite(outputfile.string(), outimg);
 
 	cout << "Finished fitting and wrote result mesh and isomap to files with basename " << outputfile.stem().stem() << "." << endl;
 
