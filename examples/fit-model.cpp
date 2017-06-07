@@ -51,6 +51,24 @@ using std::endl;
 using std::vector;
 using std::string;
 
+
+vector<int> read_sfm_indices(std::string filename) {
+  std::ifstream infile(filename);
+	if (!infile.is_open()) {
+		throw std::runtime_error(string("Could not open SFM indices file: " + filename));
+	}
+  vector<int> sfmIndices;
+  int sfmIndex;
+  cout << "Using SFM indices: [ ";
+  while(infile >> sfmIndex) {
+    cout << sfmIndex << ' ';
+    sfmIndices.push_back(sfmIndex);
+  }
+  cout << "]\n";
+
+  return sfmIndices;
+}
+
 /**
  * Reads an ibug .pts landmark file and returns an ordered vector with
  * the 68 2D landmark coordinates.
@@ -103,7 +121,7 @@ LandmarkCollection<cv::Vec2f> read_pts_landmarks(std::string filename)
 };
 
 /**
- * Draws the given mesh as wireframe into the image.
+ * Draws the SFM points onto the image.
  *
  * It does backface culling, i.e. draws only vertices in CCW order.
  *
@@ -112,6 +130,7 @@ LandmarkCollection<cv::Vec2f> read_pts_landmarks(std::string filename)
  * @param[in] modelview Model-view matrix to draw the mesh.
  * @param[in] projection Projection matrix to draw the mesh.
  * @param[in] viewport Viewport to draw the mesh.
+ * @param[in] sfmIndices SFM indices vector
  * @param[in] colour Colour of the mesh to be drawn.
  */
 void draw_points(cv::Mat image, const core::Mesh& mesh, glm::mat4x4 modelview, glm::mat4x4 projection, glm::vec4 viewport, vector<int> sfmIndices, cv::Scalar colour = cv::Scalar(0, 255, 0, 255))
@@ -231,27 +250,21 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-  // load good SFM indices file
-  std::ifstream infile(indexfile.string());
-	if (!infile.is_open()) {
-		throw std::runtime_error(string("Could not open SFM indices file: " + indexfile.string()));
-	}
+  // load SFM indices file
   vector<int> sfmIndices;
-  int sfmIndex;
-  cout << "Using SFM indices: []"
-  while(infile >> sfmIndex) {
-    cout << sfmIndex << ' ';
-    sfmIndices.push_back(sfmIndex);
-  }
-  cout << '\n';
+	try {
+    sfmIndices = read_sfm_indices(indexfile.string());
+	} catch (const std::runtime_error& e) {
+		cout << "Error reading the SFM indices file: " << e.what() << endl;
+		return EXIT_FAILURE;
+	}
 
 	// Load the image, landmarks, LandmarkMapper and the Morphable Model:
 	Mat image = cv::imread(imagefile.string());
 	LandmarkCollection<cv::Vec2f> landmarks;
 	try {
 		landmarks = read_pts_landmarks(landmarksfile.string());
-	}
-	catch (const std::runtime_error& e) {
+	} catch (const std::runtime_error& e) {
 		cout << "Error reading the landmarks: " << e.what() << endl;
 		return EXIT_FAILURE;
 	}
