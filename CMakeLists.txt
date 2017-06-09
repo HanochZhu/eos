@@ -4,6 +4,7 @@ set(eos_VERSION_MAJOR 0)
 set(eos_VERSION_MINOR 12)
 set(eos_VERSION_PATCH 1)
 set(eos_VERSION ${eos_VERSION_MAJOR}.${eos_VERSION_MINOR}.${eos_VERSION_PATCH})
+#set(CMAKE_BUILD_TYPE Debug)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -105,6 +106,10 @@ set(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/eos/render/FragmentShader.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/eos/render/detail/Vertex.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/eos/video/Keyframe.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/rapidxml-1.13/rapidxml_iterators.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/rapidxml-1.13/rapidxml_utils.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/rapidxml-1.13/rapidxml_print.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/rapidxml-1.13/rapidxml.hpp
 )
 
 add_library(eos INTERFACE)
