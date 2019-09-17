@@ -39,6 +39,7 @@ To use the library in your own project, just add the following directories to yo
 * `eos/3rdparty/nanoflann/include`
 * `eos/3rdparty/eigen`
 * `eos/3rdparty/eigen3-nnls/src`
+* `eos/3rdparty/toml11`
 
 **Make sure to clone with `--recursive` to download the required submodules!**
 
