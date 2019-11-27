@@ -50,7 +50,7 @@ To use the library in your own project, just add the following directories to yo
 To build:
 
 ```
-git clone --recursive https://github.com/patrikhuber/eos.git
+git clone --recursive https://github.com/HanochZhu/eos.git
 mkdir build && cd build # creates a build directory next to the 'eos' folder
 cmake -G "<your favourite generator>" .. -DCMAKE_INSTALL_PREFIX=../install/
 make && make install # or open the project file and build in an IDE like Visual Studio
